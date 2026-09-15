@@ -1,0 +1,11 @@
+{
+  "name": "zero_inspector_kit",
+  "version": "1.11.1",
+  "description": "One-line in-app developer console for Flutter on OpenHarmony.",
+  "main": "index.ets",
+  "author": "",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "@ohos/flutter_ohos": "file:libs/flutter.har"
+  }
+}

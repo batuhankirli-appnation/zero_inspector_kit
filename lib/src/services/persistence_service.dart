@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/sqflite.dart' show Database;
 
 import '../models/alert_event.dart';
 import '../models/error_record.dart';
 import '../models/log_entry.dart';
 import '../models/network_request.dart';
 import 'export_service.dart';
+import 'sqlite_backend.dart';
 
 /// 持久化环形缓冲服务 / Persistence ring-buffer service
 ///
@@ -81,9 +82,9 @@ class PersistenceService {
     _maxRows = maxRowsPerTable;
     _retention = retention;
     try {
-      final dir = await getDatabasesPath();
+      final dir = await SqliteBackend.getDatabasesPath();
       final path = dir.endsWith('/') ? '$dir$_dbName' : '$dir/$_dbName';
-      _db = await openDatabase(
+      _db = await SqliteBackend.openDatabase(
         path,
         version: _dbVersion,
         onCreate: (db, _) async {

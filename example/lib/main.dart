@@ -6,7 +6,7 @@ import 'package:hive/hive.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:zero_inspector_kit/zero_inspector_kit.dart';
 
 // 一行启动检查器：binding 与后续所有插件初始化都在 runAppWithInspector 内部的

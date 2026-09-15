@@ -1,11 +1,12 @@
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/sqflite.dart' show Database, DatabaseException;
 
 import '../models/database_info.dart';
 import '../utils/inspector_internal_log.dart';
 import 'database_provider.dart';
+import 'sqlite_backend.dart';
 
 /// SQLite数据库提供者实现 / SQLite database provider implementation
 /// 自动扫描应用目录下的.db和.sqlite文件 / Auto-scan .db and .sqlite files in application directory
@@ -52,7 +53,7 @@ class SqliteDatabaseProvider implements DatabaseProvider {
     final databases = <DatabaseInfo>[];
     try {
       final docDir = await getApplicationDocumentsDirectory();
-      final dbDirPath = await getDatabasesPath();
+      final dbDirPath = await SqliteBackend.getDatabasesPath();
       final directories = [docDir.path, dbDirPath];
 
       for (final dirPath in directories) {
@@ -273,11 +274,12 @@ class SqliteDatabaseProvider implements DatabaseProvider {
           : _keywordArgs(columnNames, whereKeyword);
       final countSql = 'SELECT COUNT(*) FROM $quotedTable$whereClause';
       final totalRows = whereKeyword == null || whereKeyword.isEmpty
-          ? Sqflite.firstIntValue(
+          ? SqliteBackend.firstIntValue(
                   await db.rawQuery('SELECT COUNT(*) FROM $quotedTable'),
                 ) ??
                 0
-          : Sqflite.firstIntValue(await db.rawQuery(countSql, kwArgs)) ?? 0;
+          : SqliteBackend.firstIntValue(await db.rawQuery(countSql, kwArgs)) ??
+                0;
 
       // LIMIT / OFFSET 必须是非负整数：SQLite 里 `LIMIT -1` 表示**不限制行数**，
       // 会把整张表拉进内存。Clamp to non-negative: in SQLite `LIMIT -1` means
@@ -324,7 +326,7 @@ class SqliteDatabaseProvider implements DatabaseProvider {
     // （在已存在 / 只读文件上会抛 "attempt to write a readonly database"）。
     // Read-only inspection: no `version` so sqflite won't try to write
     // `PRAGMA user_version`, which would fail on an existing / read-only file.
-    final db = await openDatabase(dbPath, readOnly: true);
+    final db = await SqliteBackend.openDatabase(dbPath, readOnly: true);
     _connections[dbPath] = db;
     _accessOrder.add(dbPath);
 

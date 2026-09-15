@@ -95,6 +95,26 @@ Notes / 说明:
   - The only non-code exception kept in the `code` list is `.github/workflows/ci.yml` (CI config changes, e.g. Dependabot action bumps, must be validated).
 - Never reintroduce `'**.md'` or `'docs/**'` to `paths-ignore` — it would skip the whole workflow and block docs-only PRs from merging.
 
+### OpenHarmony 适配分支策略 / OHOS branch policy
+
+- 鸿蒙适配（`ohos/` 原生工程、ohos 相关依赖）**只存在于鸿蒙适配分支**（如 `feat/ohos-support`），
+  **禁止合并进 `main`，也禁止用该分支发布 pub.dev**。
+  The OHOS adaptation (the `ohos/` native module and its OHOS dependencies) lives **only** on the
+  OHOS branch (e.g. `feat/ohos-support`); it must **never** be merged into `main` or used to
+  publish to pub.dev.
+- 原因：`pubspec.yaml` 里的 `sqflite_sqlcipher` 是 **git 依赖**（ohos 版本尚未发布到 pub.dev），
+  而 pub.dev 拒绝发布含 git 依赖的包（`Publishable packages can't have 'git' dependencies`）。
+  Reason: `sqflite_sqlcipher` in `pubspec.yaml` is a **git dependency** (the ohos build is not on
+  pub.dev), and pub.dev rejects packages with git dependencies.
+- 预期现象 / Expected symptoms on that branch:
+  - `flutter analyze` 稳定输出 1 条 warning：`Publishable packages can't have 'git' dependencies`（可忽略）。
+  - CI 的 `Pana Score Check` 会失败（预期），`Analyze & Test` 仍应保持通过。
+  - `flutter pub get` 需要能访问 atomgit（git 依赖要 clone）。
+- 发布 pub.dev 时：从**不含** `sqflite_sqlcipher` git 依赖的分支打包；若未来该包发布到 pub.dev，
+  改为版本依赖后即可并入主分支。
+  To publish: package from a branch **without** the git dependency. Once an ohos-capable version is
+  on pub.dev, switch to a version constraint and the code can be merged into the main branch.
+
 ### Release and publish
 1. Bump `version` in `pubspec.yaml` (semver; major bump for breaking public API).
    **Mandatory version-bump checklist — every one of these MUST be updated to the new version `X.Y.Z` (and the old version string removed). Missing any of them is a recurring, real mistake — verify each explicitly, do not assume a previous pass covered them:**

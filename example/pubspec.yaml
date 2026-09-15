@@ -17,7 +17,15 @@ dependencies:
   http: 1.6.0
   cupertino_icons: 1.0.9
   logger: 2.7.0
-  sqflite: ^2.4.0
+  # 与 zero_inspector_kit 的后端保持一致：sqflite 官方版在 OpenHarmony 上无原生实现，
+  # 改用已适配 ohos 的 sqflite_sqlcipher（不传 password 即为明文 SQLite，类型/参数完全兼容）。
+  # Keep the backend aligned with zero_inspector_kit: the official sqflite has no
+  # OpenHarmony native implementation, so we use the ohos-ready sqflite_sqlcipher
+  # (plain SQLite when no password is given; API-compatible with sqflite).
+  sqflite_sqlcipher:
+    git:
+      url: https://atomgit.com/flutter_ohos_plugin/sqflite_sqlcipher.git
+      ref: d8835f7aaa9daecde2ab097fb374d025600aab93
   path: '1.9.1'
   shared_preferences: ^2.3.0
   hive: ^2.2.0

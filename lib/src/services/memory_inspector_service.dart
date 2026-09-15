@@ -558,9 +558,21 @@ class MemoryInspectorService extends ChangeNotifier {
   /// 检测当前平台是否支持 Native 内存采集
   /// Detect whether current platform supports Native memory collection
   ///
-  /// 仅 Android 和 iOS 真机支持 / Only Android and iOS real devices are supported
+  /// Android / iOS / OpenHarmony 三端都提供了原生实现（见 ohos/ 目录下的 ArkTS 插件）
+  /// Android / iOS / OpenHarmony all ship a native implementation (see the ArkTS
+  /// plugin under `ohos/`).
+  ///
+  /// 注意：这里不能用 `Platform.isOhos` / `TargetPlatform.ohos`——它们只存在于
+  /// Flutter OHOS SDK，在标准 Flutter SDK 上会导致 Android / iOS 构建编译失败。
+  /// 用 `Platform.operatingSystem == 'ohos'` 可在两套 SDK 上同时通过编译。
+  /// Note: do NOT use `Platform.isOhos` / `TargetPlatform.ohos` — they only exist
+  /// in the Flutter OHOS SDK and would break Android / iOS builds on the standard
+  /// Flutter SDK. `Platform.operatingSystem == 'ohos'` compiles on both.
   void _detectNativeSupport() {
-    _isNativeSupported = Platform.isAndroid || Platform.isIOS;
+    _isNativeSupported =
+        Platform.isAndroid ||
+        Platform.isIOS ||
+        Platform.operatingSystem == 'ohos';
   }
 
   /// 开始 Native 内存数据采集刷新 / Start Native memory data collection refresh

@@ -39,19 +39,23 @@ class PlatformChannel {
 
   /// 获取进程级内存信息 / Get process-level memory info
   ///
-  /// 通过原生 Platform Channel 调用 Android 的 Debug.MemoryInfo 或 iOS 的 mach task_info，
-  /// 获取进程级内存数据（不依赖 VM Service，在真机上 100% 可用）。
-  /// Calls Android's Debug.MemoryInfo or iOS's mach task_info via native Platform Channel,
-  /// gets process-level memory data (doesn't depend on VM Service, 100% available on real devices).
+  /// 通过原生 Platform Channel 调用 Android 的 Debug.MemoryInfo、iOS 的 mach task_info
+  /// 或 OpenHarmony 的 hidebug，获取进程级内存数据（不依赖 VM Service，在真机上 100% 可用）。
+  /// Calls Android's Debug.MemoryInfo, iOS's mach task_info or OpenHarmony's hidebug
+  /// via native Platform Channel, gets process-level memory data (doesn't depend on
+  /// VM Service, 100% available on real devices).
   ///
   /// 返回 Map 包含以下字段（单位：字节）/ Returns Map with following fields (in bytes):
-  /// - rss:                   进程 RSS（Android: Process.myRss(), iOS: resident_size）
-  /// - totalPss:              总 PSS（仅 Android / Android only）
-  /// - dalvikPss:             Dalvik/ART PSS（仅 Android / Android only）
-  /// - nativePss:             Native PSS（仅 Android / Android only）
-  /// - totalPrivateDirty:     总私有脏页（仅 Android / Android only）
-  /// - nativePrivateDirty:    Native 私有脏页（仅 Android / Android only）
-  /// - totalRss:              总 RSS 分项（仅 Android API 23+ / Android API 23+ only）
+  /// - rss:                   进程 RSS（Android: VmRSS, iOS: resident_size, OHOS: hidebug rss）
+  /// - totalPss:              总 PSS（Android / OHOS）
+  /// - dalvikPss:             Dalvik/ART PSS（Android）；OHOS 为 ArkTS 虚拟机堆已用大小
+  ///                          Dalvik/ART PSS (Android); on OHOS it is the ArkTS VM heap usage
+  /// - nativePss:             Native PSS（Android）；OHOS 为 native heap 已分配字节
+  ///                          Native PSS (Android); on OHOS it is the allocated native heap bytes
+  /// - totalPrivateDirty:     总私有脏页（Android / OHOS）
+  /// - nativePrivateDirty:    Native 私有脏页（Android）；OHOS 为进程私有脏页
+  ///                          Native private dirty (Android); on OHOS it is the process private dirty
+  /// - totalRss:              总 RSS 分项（Android / OHOS）
   /// - physicalFootprint:    物理内存占用（仅 iOS / iOS only，最准确的内存指标）
   /// - internalCompressed:   已压缩内存（仅 iOS / iOS only）
   /// - internalSize:         内部内存总量（仅 iOS / iOS only）

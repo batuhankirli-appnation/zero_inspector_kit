@@ -27,6 +27,14 @@ class DeviceInfoUtil {
         final ios = await plugin.iosInfo;
         final machine = ios.utsname.machine;
         model = machine.isNotEmpty ? '${ios.model} ($machine)' : ios.model;
+      } else if (Platform.operatingSystem == 'ohos') {
+        // OpenHarmony：device_info_plus 的 ohosInfo 仅在 Flutter OHOS 版依赖中
+        // 提供，标准版没有该 API（直接引用会在 Android / iOS 构建上编译失败），
+        // 因此这里显式分支并回退到「系统名 + 版本」。
+        // OpenHarmony: device_info_plus only exposes `ohosInfo` in the Flutter
+        // OHOS build; referencing it would break standard SDK builds, so this
+        // branch falls back to "OS name + version".
+        model = 'OpenHarmony ${Platform.operatingSystemVersion}';
       } else {
         model = Platform.operatingSystem;
       }

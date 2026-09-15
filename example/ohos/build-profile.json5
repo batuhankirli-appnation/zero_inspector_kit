@@ -1,0 +1,52 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "C:\\Users\\mi\\.ohos\\config\\default_ohos_1ppwmqgUJJx43VLjsz9pIjVEY8Ej3jl_LTfX9a5_wT4=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B966D9B8507D394785FF2BD39610DA5490A3A6BF2D04BABA682BDABFC25824FD9E7A87127058234",
+          "profile": "C:\\Users\\mi\\.ohos\\config\\default_ohos_1ppwmqgUJJx43VLjsz9pIjVEY8Ej3jl_LTfX9a5_wT4=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "C:\\Users\\mi\\.ohos\\config\\default_ohos_1ppwmqgUJJx43VLjsz9pIjVEY8Ej3jl_LTfX9a5_wT4=.p12",
+          "storePassword": "0000001B04983AEC7E8734E965E50233A1FA2B220901E9298FE89000887FD5036AD2A3A29C41EC324CFC66"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "6.0.2(22)",
+        "runtimeOS": "HarmonyOS"
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug"
+      },
+      {
+        "name": "profile"
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}
