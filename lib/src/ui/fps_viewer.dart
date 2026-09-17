@@ -3,11 +3,15 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../services/fps_service.dart';
+import 'blocking_watchdog_card.dart';
 import 'theme/inspector_theme.dart';
 
 /// FPS 查看器（Inspector 面板内详情页）/ FPS viewer (in-panel detail page)
 ///
 /// 包含以下内容 / Contains:
+/// - FPS 总开关卡片 / FPS master switch card
+/// - 主线程阻塞看门狗卡片（FPS 看不见的"零帧卡死"）/ Main-thread blocking
+///   watchdog card (the "no frames at all" stalls FPS cannot see)
 /// - FPS 概览卡片（当前 FPS、掉帧率、总帧数）/ FPS overview card (current FPS, jank rate, total frames)
 /// - FPS 趋势折线图 / FPS trend line chart
 /// - 掉帧记录列表 / Janky frame record list
@@ -48,6 +52,11 @@ class _FpsViewerState extends State<FpsViewer> {
           children: [
             // 总开关卡片 / Master switch card
             _buildMainSwitchCard(),
+            const SizedBox(height: 12),
+            // 主线程阻塞看门狗：独立于 FPS 开关，因为它测的是"完全不产帧"的场景。
+            // Main-thread blocking watchdog: independent of the FPS switch,
+            // since it measures the case where no frames are produced at all.
+            const BlockingWatchdogCard(),
             const SizedBox(height: 12),
             if (service.isRunning) ...[
               _buildOverviewCard(),
