@@ -10,6 +10,7 @@ export default {
   Errors: '🚨 Errors',
   'Database-Viewer': '💾 Database Viewer',
   'Route-Tracker': '🧭 Route Tracker',
+  Timeline: '🧵 Timeline',
   'Memory-Viewer': '📊 Memory Viewer',
   'FPS-Viewer': '🎯 FPS Viewer',
   Alerts: '🔔 Alerts',

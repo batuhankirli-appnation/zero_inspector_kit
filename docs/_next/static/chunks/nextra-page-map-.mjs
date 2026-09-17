@@ -86,6 +86,12 @@ export const pageMap = [{
     "sidebarTitle": "Route Tracker"
   }
 }, {
+  name: "Timeline",
+  route: "/Timeline",
+  frontMatter: {
+    "sidebarTitle": "Timeline"
+  }
+}, {
   name: "Usage",
   route: "/Usage",
   frontMatter: {

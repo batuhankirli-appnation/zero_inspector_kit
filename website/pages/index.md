@@ -16,6 +16,7 @@ A powerful Flutter plugin for in-app developer console, providing real-time debu
 | **Memory Viewer** | Trend chart, Dart Heap, Native memory, leak detection (incl. Flutter MemoryAllocations bridge) / 内存趋势图、Dart Heap、Native 内存、泄漏检测（含官方 MemoryAllocations 桥接） |
 | **FPS Monitor** | Real-time FPS, jank rate, trend chart / 实时 FPS、卡顿率、趋势图 |
 | **Route Tracker** | Navigation history tracking / 路由追踪 |
+| **Session Timeline** | Unified view of network/logs/errors/routes/alerts by time, with ±N-second focus / 网络/日志/异常/路由/告警按时间归并，支持 ±N 秒聚焦 |
 | **Session Persistence** | Logs/network/errors survive restarts via a disk ring buffer; logs & errors replay on launch; one-tap session archive export / 日志/网络/异常通过磁盘环形缓冲跨重启保留，启动时回放日志与异常；一键导出会话存档 |
 | **Alerts** | Rule-based alerts (network/log/memory/FPS) with unread badge / 基于规则的告警（网络/日志/内存/FPS）与未读角标 |
 | **Sensitive Masking & cURL** | Mask secrets on export; one-click cURL copy; batch ops / 导出遮蔽敏感字段、一键复制 cURL、批量操作 |
@@ -34,6 +35,7 @@ A powerful Flutter plugin for in-app developer console, providing real-time debu
 | [Errors](Errors) | Aggregated error viewing / 异常聚合查看 |
 | [Database Viewer](Database-Viewer) | Database inspection / 数据库查看器 |
 | [Route Tracker](Route-Tracker) | Route tracking / 路由追踪 |
+| [Timeline](Timeline) | Unified session timeline / 统一会话时间线 |
 | [Memory Viewer](Memory-Viewer) | Memory monitoring & leak detection / 内存监控与泄漏检测 |
 | [FPS Viewer](FPS-Viewer) | FPS monitoring & jank detection / FPS 监控与卡顿检测 |
 | [Alerts](Alerts) | Rule-based alerting / 基于规则的告警 |

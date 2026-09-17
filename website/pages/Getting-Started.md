@@ -51,6 +51,10 @@ After integration, the inspector automatically does the following **without modi
 >
 > **Memory** 和 **FPS** 面板作为标签页可用，但**默认关闭**以避免性能开销。在各自面板顶部打开开关才会开始采集数据。详见 [Memory Viewer](Memory-Viewer) 和 [FPS Viewer](FPS-Viewer)。
 
+> **Pre-initialized binding / 提前初始化的 binding**: If you call `WidgetsFlutterBinding.ensureInitialized()` or `await` a platform-channel plugin (e.g. `SharedPreferences`) **before** `runAppWithInspector()`, the binding is already initialized. In that case `runAppWithInspector()` degrades gracefully to a plain `runApp()` (capturing `debugPrint` logs, but not raw `print()`) instead of throwing a "Zone mismatch" assertion. No extra setup is needed.
+>
+> **binding 已提前初始化**：如果你在 `runAppWithInspector()` **之前**调用了 `WidgetsFlutterBinding.ensureInitialized()` 或 `await` 了会触发 platform channel 的插件（如 `SharedPreferences`），binding 已被初始化。此时 `runAppWithInspector()` 会优雅降级为普通 `runApp()`（仍捕获 `debugPrint` 日志，但不捕获原始 `print()`），而非抛出 "Zone mismatch" 断言。无需额外处理。
+
 ## Production Build / 生产构建
 
 The inspector is **automatically disabled** in release mode. You don't need to remove any code — Flutter's tree-shaking will remove all inspector-related code from production builds.
