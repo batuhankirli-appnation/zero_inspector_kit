@@ -340,18 +340,29 @@ class _TimelineViewerState extends State<TimelineViewer> {
           }),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            // Stack 而非 Row：Row + CrossAxisAlignment.stretch + Expanded 在 ListView
+            // 的无限高约束下会算出无限高度并崩溃。用 Stack 让卡片高度由内容决定，
+            // 竖条以 Positioned(top/bottom:0) 拉伸到该高度。
+            // Stack instead of Row: a Row with stretch + Expanded resolves to
+            // infinite height under ListView's unbounded vertical constraint and
+            // crashes. With Stack the card height is driven by content, and the
+            // bar stretches via Positioned(top/bottom:0).
+            child: Stack(
               children: [
-                Container(
-                  width: 3,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(1.5),
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 3,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(1.5),
+                    ),
                   ),
                 ),
-                Expanded(
+                Padding(
+                  padding: const EdgeInsets.only(left: 11),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
