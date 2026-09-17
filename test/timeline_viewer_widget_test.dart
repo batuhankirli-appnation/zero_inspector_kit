@@ -41,11 +41,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: SizedBox(
-            width: 400,
-            height: 600,
-            child: TimelineViewer(),
-          ),
+          body: SizedBox(width: 400, height: 600, child: TimelineViewer()),
         ),
       ),
     );
@@ -63,11 +59,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: SizedBox(
-            width: 400,
-            height: 600,
-            child: TimelineViewer(),
-          ),
+          body: SizedBox(width: 400, height: 600, child: TimelineViewer()),
         ),
       ),
     );

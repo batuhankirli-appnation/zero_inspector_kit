@@ -61,10 +61,6 @@ class _InspectorPanelState extends State<InspectorPanel>
   /// Trade-off: switching tabs rebuilds the page and resets its transient state.
   late final List<Widget> _pages = [
     InspectorErrorBoundary(
-      label: 'Timeline',
-      child: TimelineViewer(key: ValueKey('timeline')),
-    ),
-    InspectorErrorBoundary(
       label: 'Network',
       child: NetworkViewer(key: ValueKey('network')),
     ),
@@ -93,6 +89,10 @@ class _InspectorPanelState extends State<InspectorPanel>
       child: RouteViewer(key: ValueKey('routes')),
     ),
     InspectorErrorBoundary(
+      label: 'Timeline',
+      child: TimelineViewer(key: ValueKey('timeline')),
+    ),
+    InspectorErrorBoundary(
       label: 'Widgets',
       child: WidgetTreeInspector(key: ValueKey('widgets')),
     ),
@@ -104,7 +104,6 @@ class _InspectorPanelState extends State<InspectorPanel>
 
   /// 标签页标题 / Tab titles
   final List<String> _titles = const [
-    'Timeline',
     'Network',
     'Logs',
     'Errors',
@@ -112,13 +111,13 @@ class _InspectorPanelState extends State<InspectorPanel>
     'Memory',
     'FPS',
     'Routes',
+    'Timeline',
     'Widgets',
     'Alerts',
   ];
 
   /// 标签页图标 / Tab icons
   final List<IconData> _icons = const [
-    Icons.timeline_rounded,
     Icons.http_rounded,
     Icons.article_rounded,
     Icons.error_outline_rounded,
@@ -126,6 +125,7 @@ class _InspectorPanelState extends State<InspectorPanel>
     Icons.memory_rounded,
     Icons.speed_rounded,
     Icons.route_rounded,
+    Icons.timeline_rounded,
     Icons.visibility_rounded,
     Icons.notifications_active_rounded,
   ];
