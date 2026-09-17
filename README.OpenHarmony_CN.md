@@ -15,7 +15,7 @@ This document describes the OpenHarmony (HarmonyOS NEXT) adaptation scope, integ
 | MethodChannel 通道 / Channel | ✅ `zero_inspector_kit`（与 Android / iOS 完全一致） |
 | 依赖鸿蒙化 / Dependency adaptation | ⚠️ 需使用鸿蒙版依赖，见「五、依赖」/ needs OHOS-flavored deps, see §5 |
 
-当前版本 / Current version：`1.11.1`
+当前版本 / Current version：`1.12.0`
 
 ## 二、环境要求 / Requirements
 
@@ -32,7 +32,7 @@ This document describes the OpenHarmony (HarmonyOS NEXT) adaptation scope, integ
 
 ```yaml
 dependencies:
-  zero_inspector_kit: ^1.11.1
+  zero_inspector_kit: ^1.12.0
 ```
 
 ### 3.2 生成鸿蒙工程（仅首次）/ Generate the ohos projects (first time only)

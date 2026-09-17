@@ -15,7 +15,7 @@ known differences of `zero_inspector_kit`. 本文件说明本库在 OpenHarmony 
 | MethodChannel | ✅ `zero_inspector_kit` (identical to Android / iOS) |
 | Dependency adaptation / 依赖鸿蒙化 | ⚠️ OHOS-flavored dependencies required, see §5 |
 
-Current version / 当前版本：`1.11.1`
+Current version / 当前版本：`1.12.0`
 
 ## 2. Requirements / 环境要求
 
@@ -32,7 +32,7 @@ Current version / 当前版本：`1.11.1`
 
 ```yaml
 dependencies:
-  zero_inspector_kit: ^1.11.1
+  zero_inspector_kit: ^1.12.0
 ```
 
 ### 3.2 Generate the ohos projects (first time only) / 生成鸿蒙工程（仅首次）
