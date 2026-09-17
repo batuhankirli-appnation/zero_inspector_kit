@@ -69,6 +69,28 @@ When turned off, all callbacks and timers are cancelled, leaving no residual ove
 
 "Reset" 按钮清空所有统计和历史数据，适合测量特定交互场景。
 
+## Main-thread Blocking Watchdog / 主线程阻塞看门狗
+
+The FPS panel also includes a **main-thread blocking watchdog** that catches stalls FPS cannot see.
+
+FPS 面板还内置**主线程阻塞看门狗**，专门捕捉 FPS 看不见的卡死。
+
+> **Available since v1.12.0**
+>
+> **v1.12.0 起可用**
+
+**Why it's needed / 为什么需要**: FPS only measures frames. When the UI isolate truly stalls (e.g. a synchronous heavy computation), it produces **zero frames**, so FPS reads as idle while the app is actually frozen. The watchdog closes that blind spot.
+
+FPS 只测帧。当 UI isolate 真正卡死（如同步重计算）时，它**零帧产出**，于是 FPS 显示空闲，而 App 其实已冻住。看门狗补上这个盲区。
+
+**How it works / 工作原理**:
+
+- A low-frequency **100ms heartbeat** measures the UI isolate's responsiveness directly / 用 **100ms 低频心跳** 直接测量 UI isolate 的响应间隔
+- If a gap exceeds **300ms** with no response, it records a blocking event (duration / time / nearby logs) / 若超过 **300ms** 无响应，记录一条阻塞事件（时长 / 时间 / 附近日志）
+- **Off by default** with its **own switch** (not tied to the FPS master switch) — zero overhead unless you opt in / **默认关闭**、有**独立开关**（不随 FPS 总开关联动），不开启则零开销
+
+开启后，真正卡死（不产帧）也会被记成阻塞事件，配合 FPS 一起看因果。
+
 ## How It Works / 工作原理
 
 FPS monitoring uses Flutter's `WidgetsBinding.instance.addTimingsCallback` to receive frame timing information from the engine. The callback is **batched** — it may return multiple `FrameTiming` objects per call, so each frame is recorded individually inside the loop to ensure accurate FPS calculation.
