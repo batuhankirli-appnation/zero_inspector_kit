@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.12.0
+
+### Added / 新增
+- 统一会话时间线 `TimelineViewer`（面板首个 Tab）：把网络 / 日志 / 异常 / 路由 / 告警五类数据按时间归并成一条流（`TimelineService.build`），可逐来源筛选，点任意事件即「聚焦它前后 ±N 秒」的全部来源事件（`TimelineService.contextAround`，默认 10s，可切 5/30s），一眼看清因果（如「路由跳转 → 两个请求 → error 日志 → 5xx 告警」）。数据仍归属各自服务，视图只做归并，面板未打开时零开销。 / Unified session timeline `TimelineViewer` (first panel tab): merges network / logs / errors / routes / alerts into one time-ordered stream (`TimelineService.build`), with per-source filtering and a "focus ±N seconds around any event" mode (`TimelineService.contextAround`, default 10s, toggle 5/30s) to see causality at a glance (e.g. "route push → two requests → error log → 5xx alert"). Data still lives in its own service; the view only merges, costing nothing while the panel is closed.
+- 主线程阻塞看门狗（FPS 页内 `BlockingWatchdogCard`）：用一个 100ms 低频心跳直接测量 UI isolate 的响应间隔，默认关闭、在 FPS 页内有独立开关（不随 FPS 总开关联动，不开启则零开销）。超过 300ms 无响应即记录一条阻塞事件（时长 / 时间 / 附近日志），专门补上 FPS 的盲区——真正卡死时不产帧、FPS 反而显示空闲。 / Main-thread blocking watchdog (`BlockingWatchdogCard` inside the FPS tab): a 100ms low-frequency heartbeat measures the UI isolate's responsiveness directly, off by default with its own switch (not tied to the FPS master switch, so it costs nothing unless you opt in). A gap past 300ms records a blocking event (duration / time / nearby logs), closing the FPS blind spot where a real stall produces no frames and FPS reads as idle.
+- 发版版本一致性自检 `tool/check_release.dart`（及 `test/version_consistency_test.dart`）：以 `pubspec.yaml` 的 `version` 为唯一真值，核对 podspec、`InspectorVersion.value`、两个 README 的安装片段与升级提示、`CHANGELOG.md` 顶部是否一致，并在 CI 的 `Analyze & Test` 之后单独一步拦截版本漂移。 / Release version-consistency self-check `tool/check_release.dart` (and `test/version_consistency_test.dart`): takes `pubspec.yaml`'s `version` as the single source of truth and verifies the podspec, `InspectorVersion.value`, both READMEs' install snippets and upgrade callouts, and the top of `CHANGELOG.md`; CI runs it as its own step after `Analyze & Test` to block version drift.
+
+### Fixed / 修复
+- `runAppWithInspector` 在 Flutter binding 已被调用方（外层 Zone）初始化时不再崩溃：此前只要调用方按常规先 `WidgetsFlutterBinding.ensureInitialized()` 或 `await` 了会触发 platform channel 的插件（如 `SharedPreferences`），就会抛 "Zone mismatch" 断言。现已探测 binding 状态，命中则跳过 Zone 包裹、降级为直接 `runApp`（debugPrint 日志仍捕获，仅 `print` 直出不捕获）并打一次提示。 / `runAppWithInspector` no longer crashes when the Flutter binding was already initialized by the caller (outer Zone): previously, any caller that ran `WidgetsFlutterBinding.ensureInitialized()` or awaited a platform-channel plugin (e.g. `SharedPreferences`) first hit a "Zone mismatch" assertion. It now detects the binding state and degrades to a plain `runApp` (debugPrint logs still captured, only raw print() not), logging one notice.
+
 ## 1.11.1
 
 ### Fixed / 修复

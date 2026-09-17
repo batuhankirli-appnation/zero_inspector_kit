@@ -27,18 +27,19 @@ void main() {
 
 ## Inspector Panel / 检查器面板
 
-The inspector panel contains **9 tabs** (as of v1.9.0):
+The inspector panel contains **10 tabs** (as of v1.12.0):
 
-检查器面板包含 **9 个标签页**（v1.9.0 起）：
+检查器面板包含 **10 个标签页**（v1.12.0 起）：
 
 | Tab | Icon | Feature |
 |-----|------|---------|
+| **Timeline** | 🧵 | Unified session timeline: network / logs / errors / routes / alerts merged into one stream, with ±N-second focus / 统一会话时间线：网络/日志/异常/路由/告警按时间归并，支持 ±N 秒聚焦 |
 | **Network** | 🌐 | HTTP request viewing + interceptor rules / 网络请求查看 + 拦截修改 |
 | **Logs** | 📝 | Log viewing with level filter / 日志查看 |
 | **Errors** | 🚨 | Aggregated & deduped crash viewing / 去重聚合的异常查看 |
 | **Database** | 💾 | Database and table inspection / 数据库查看 |
 | **Memory** | 📊 | Memory trend, Dart Heap, Native memory, leak detection / 内存趋势、Dart Heap、Native 内存、泄漏检测 |
-| **FPS** | 🎯 | Real-time FPS, jank rate, trend chart / 实时 FPS、卡顿率、趋势图 |
+| **FPS** | 🎯 | Real-time FPS, jank rate, trend chart, plus main-thread blocking watchdog / 实时 FPS、卡顿率、趋势图，以及主线程阻塞看门狗 |
 | **Routes** | 🧭 | Route navigation tracking / 路由追踪 |
 | **Widgets** | 🔍 | Widget tree snapshot for the current route / 当前路由的 Widget 树快照 |
 | **Alerts** | 🔔 | Rule-based alerts with unread badge / 基于规则的告警与未读角标 |

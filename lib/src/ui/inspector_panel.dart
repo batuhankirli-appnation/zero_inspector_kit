@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'theme/inspector_theme.dart';
 import '../services/fps_service.dart';
 import '../services/memory_inspector_service.dart';
+import 'timeline_viewer.dart';
 import 'network_viewer.dart';
 import 'log_viewer.dart';
 import 'error_viewer.dart';
@@ -27,9 +28,9 @@ import '../utils/formatters.dart';
 enum _PersistedDataAction { export, clearDisk, clearDiskAndLists }
 
 /// 检查器面板 / Inspector panel
-/// 按诊断工作流排序的网络、日志、异常、数据库、内存、FPS、路由、Widget、告警九个查看器
-/// Nine viewers ordered by diagnostic workflow: network, logs, errors, database,
-/// memory, FPS, routes, widgets, alerts
+/// 按诊断工作流排序的时间线、网络、日志、异常、数据库、内存、FPS、路由、Widget、告警十个查看器
+/// Ten viewers ordered by diagnostic workflow: timeline, network, logs, errors,
+/// database, memory, FPS, routes, widgets, alerts
 class InspectorPanel extends StatefulWidget {
   /// 关闭面板回调 / Close panel callback
   final VoidCallback onClose;
@@ -59,6 +60,10 @@ class _InspectorPanelState extends State<InspectorPanel>
   /// listening to the global notifier), so each notify rebuilds just the current page.
   /// Trade-off: switching tabs rebuilds the page and resets its transient state.
   late final List<Widget> _pages = [
+    InspectorErrorBoundary(
+      label: 'Timeline',
+      child: TimelineViewer(key: ValueKey('timeline')),
+    ),
     InspectorErrorBoundary(
       label: 'Network',
       child: NetworkViewer(key: ValueKey('network')),
@@ -99,6 +104,7 @@ class _InspectorPanelState extends State<InspectorPanel>
 
   /// 标签页标题 / Tab titles
   final List<String> _titles = const [
+    'Timeline',
     'Network',
     'Logs',
     'Errors',
@@ -112,6 +118,7 @@ class _InspectorPanelState extends State<InspectorPanel>
 
   /// 标签页图标 / Tab icons
   final List<IconData> _icons = const [
+    Icons.timeline_rounded,
     Icons.http_rounded,
     Icons.article_rounded,
     Icons.error_outline_rounded,

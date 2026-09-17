@@ -50,6 +50,15 @@ export 'src/ui/widget_tree_viewer.dart';
 export 'src/ui/alerts_viewer.dart';
 export 'src/ui/network_timeline.dart';
 
+// 统一会话时间线与主线程阻塞看门狗（v1.12.0 新增）。
+// Unified session timeline & main-thread blocking watchdog (added in v1.12.0).
+export 'src/models/timeline_event.dart';
+export 'src/services/timeline_service.dart';
+export 'src/ui/timeline_viewer.dart';
+export 'src/models/blocking_event.dart';
+export 'src/services/blocking_watchdog_service.dart';
+export 'src/ui/blocking_watchdog_card.dart';
+
 export 'zero_inspector_kit_platform_interface.dart';
 
 import 'dart:async';
@@ -75,6 +84,7 @@ import 'src/services/memory_inspector_service.dart';
 import 'src/services/shared_prefs_provider.dart';
 import 'src/services/hive_provider.dart';
 import 'src/services/widget_tree_service.dart';
+import 'src/services/blocking_watchdog_service.dart';
 
 /// ZeroInspectorKit 插件入口类 / ZeroInspectorKit plugin entry class
 /// 提供一键初始化和应用包装功能，实现零侵入集成 / Provides one-click initialization and app wrapping for zero-invasion integration
@@ -112,10 +122,16 @@ import 'src/services/widget_tree_service.dart';
 /// - 自动显示悬浮检查器按钮（release 模式自动隐藏）/ Auto-show floating inspector button (auto-hidden in release mode)
 ///
 /// 注意 / Note:
-/// - 不要在 runAppWithInspector 之前调用 WidgetsFlutterBinding.ensureInitialized()
-///   或 await 会触发 platform channel 的插件（如 SharedPreferences），否则 binding 会在
-///   外层 Zone 初始化，触发 "Zone mismatch" 断言。/ Do NOT call ensureInitialized() or await
-///   platform-channel plugins before runAppWithInspector, or Flutter throws "Zone mismatch".
+/// - binding 必须在检查器 Zone 内首次初始化，print() 才能被完整捕获：不要在
+///   runAppWithInspector 之前调用 WidgetsFlutterBinding.ensureInitialized() 或
+///   await 会触发 platform channel 的插件（如 SharedPreferences）。/ The binding must
+///   first initialize inside the inspector Zone for print() capture to work: do
+///   NOT call ensureInitialized() or await platform-channel plugins before
+///   runAppWithInspector.
+/// - 若已经这么做了也不会崩溃：本方法会探测到 binding 已初始化并自动降级为直接
+///   runApp（debugPrint 日志仍捕获，仅 print() 直出不捕获）。/ Doing so no longer
+///   crashes: the method detects the pre-initialized binding and degrades to a
+///   plain runApp (debugPrint logs are still captured, raw print() is not).
 /// - 各能力可通过 init() 的命名参数按需开关 / Each capability can be toggled via init()'s named params.
 class ZeroInspectorKit {
   static bool _initialized = false;
@@ -252,6 +268,7 @@ class ZeroInspectorKit {
     InspectorHttpInterceptor.instance.stop();
     ErrorService.instance.uninstall();
     FpsService.instance.stop();
+    BlockingWatchdogService.instance.stop();
     MemoryInspectorService.instance.stopMonitoring();
     InspectorService.instance.disposeService();
     await PersistenceService.instance.dispose();
@@ -334,16 +351,43 @@ class ZeroInspectorKit {
       enableNetworkTimeline: enableNetworkTimeline,
     );
 
+    // binding 已在调用方（外层 Zone）初始化时不能再套 Zone，否则 Flutter 会抛
+    // "Zone mismatch" 直接崩溃 —— 见 [_isFlutterBindingInitialized]。
+    // 此时降级为直接 runApp：日志捕获仍由 debugPrint 覆写生效，仅 print() 直出
+    // 的捕获失效，其余能力（网络 / 数据库 / 路由 / 面板）完全不变。
+    // When the binding is already initialized by the caller (outer Zone), we
+    // must not wrap runApp in a Zone — Flutter would throw "Zone mismatch" and
+    // crash; see [_isFlutterBindingInitialized]. We degrade to a plain runApp:
+    // log capture still works through the debugPrint override, only raw print()
+    // capture is lost — network / database / route / panel are unaffected.
+    if (_isFlutterBindingInitialized()) {
+      assert(() {
+        debugPrint(
+          '[ZeroInspectorKit] The Flutter binding was already initialized '
+          'before runAppWithInspector, so the inspector skipped its Zone '
+          'wrapper to avoid a "Zone mismatch" crash. debugPrint logs are still '
+          'captured; raw print() calls are not. To capture print() too, drop '
+          'ensureInitialized() / plugin awaits before runAppWithInspector, or '
+          'use ZeroInspectorKit.init() + ZeroInspectorKit.wrapApp().',
+        );
+        return true;
+      }());
+      runApp(wrapApp(app, enable: enable));
+      return;
+    }
+
     // 用 zone 包裹 runApp 以捕获 print() 日志（InspectorLogInterceptor 的
     // debugPrint 覆写 + ZoneSpecification.print 共同生效）。
     // 注意：binding 必须在该 zone 内首次初始化 —— 调用方不要在 runAppWithInspector
     // 之前调用 WidgetsFlutterBinding.ensureInitialized() 或 await 任何会触发
     // platform channel 的插件（如 SharedPreferences），否则 binding 会在外层
     // zone 初始化，与 runApp 所在 zone 不一致，触发 "Zone mismatch" 断言。
+    // 命中该场景时不再崩溃，而是走上面的降级分支。
     // The binding must be initialized in this same zone — callers must NOT
     // call ensureInitialized() or await plugin/platform-channel calls before
     // runAppWithInspector, or the binding gets initialized in the outer zone
-    // and Flutter throws "Zone mismatch".
+    // and Flutter throws "Zone mismatch". That scenario now degrades gracefully
+    // via the branch above instead of crashing.
     runZonedGuarded(
       () => runApp(wrapApp(app, enable: enable)),
       (error, stackTrace) {
@@ -363,6 +407,36 @@ class ZeroInspectorKit {
         },
       ),
     );
+  }
+
+  /// Flutter binding 是否已被初始化（在调用方、即本类之外的 Zone 中）。
+  /// Whether the Flutter binding has already been initialized (by the caller,
+  /// outside this class's Zone).
+  ///
+  /// binding 只记录一次它初始化时所在的 Zone。若调用方在 runAppWithInspector
+  /// 之前调用过 `WidgetsFlutterBinding.ensureInitialized()`，或 await 了
+  /// SharedPreferences 这类会触发 platform channel 的插件，binding 就已在外层
+  /// Zone 初始化；此时再用 runZonedGuarded 包裹 runApp，Flutter 会断言两个 Zone
+  /// 不一致并抛 "Zone mismatch" 崩溃 —— 这在 debug 下是一个必崩且难以自查的坑。
+  /// The binding records the Zone it was initialized in, once. If the caller
+  /// called `WidgetsFlutterBinding.ensureInitialized()` or awaited a
+  /// platform-channel plugin (e.g. SharedPreferences) before
+  /// runAppWithInspector, the binding lives in the outer Zone, and wrapping
+  /// runApp in a new Zone makes Flutter assert a Zone mismatch and crash — a
+  /// guaranteed, hard-to-diagnose crash in debug builds.
+  ///
+  /// 未初始化时读取 `WidgetsBinding.instance` 会抛异常（debug 为断言、
+  /// release 为空检查），因此用 try/catch 探测，两种模式行为一致。
+  /// Reading `WidgetsBinding.instance` throws when uninitialized (assertion in
+  /// debug, null check in release), so we probe with try/catch — behavior is
+  /// identical in both modes.
+  static bool _isFlutterBindingInitialized() {
+    try {
+      final Object binding = WidgetsBinding.instance;
+      return binding is WidgetsBinding;
+    } catch (_) {
+      return false;
+    }
   }
 }
 

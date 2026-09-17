@@ -19,7 +19,7 @@
 [![Dart](https://img.shields.io/badge/Dart-✓-0175C2?logo=dart)](https://dart.dev)
 [![Style: effective dart](https://img.shields.io/badge/style-effective_dart-40c4ff.svg)](https://pub.dev/packages/effective_dart)
 
-> **🔔 推荐升级：** 本次修复了路由参数被直接强转为 `Map` 的问题——任何非 Map 参数（自定义页面参数类、数据模型，或推断为 `Map<String, Object>` 的字面量）都会抛出 `TypeError` 并中断宿主 App 的导航；现已改为防御式归一化（null 保持 / Map 做 String 键浅拷贝 / 尽量经 JSON 展开 / 否则 `toString`），并将 `_logRoute` 包裹保护，检查器自身出错也绝不会再中断导航。建议所有用户升级到最新版本（`^1.11.1`）。
+> **🔔 推荐升级：** 本版本新增统一会话时间线，以及在 FPS 之下看不见的「零帧卡死」主线程阻塞看门狗；当 binding 已被预先初始化时，`runAppWithInspector` 不再以 "Zone mismatch" 崩溃，而是优雅降级。建议所有用户升级到最新版本（`^1.12.0`）。
 
 🌐 **[官方网站](https://www.zerolabsco.com/)** &nbsp;·&nbsp; 📦 **[在 pub.dev 查看](https://pub.dev/packages/zero_inspector_kit)** &nbsp;·&nbsp; 🔗 **[查看 GitHub 仓库](https://github.com/zero-labsco/zero_inspector_kit)**
 
@@ -101,7 +101,7 @@
 
 ```yaml
 dependencies:
-  zero_inspector_kit: ^1.11.1
+  zero_inspector_kit: ^1.12.0
 ```
 
 ### GitHub
@@ -111,7 +111,7 @@ dependencies:
   zero_inspector_kit:
     git:
       url: https://github.com/zero-labsco/zero_inspector_kit.git
-      ref: release/v1.11.1   # 将 1.11.1 替换为你需要的版本号
+      ref: release/v1.12.0   # 将 1.12.0 替换为你需要的版本号
 ```
 
 ---
