@@ -321,26 +321,14 @@ class _TimelineViewerState extends State<TimelineViewer> {
       decoration: BoxDecoration(
         color: InspectorColors.card,
         borderRadius: BorderRadius.circular(InspectorDimensions.cardRadius),
-        border: Border(
-          left: BorderSide(color: color, width: 2),
-          top: BorderSide(
-            color: isAnchor
-                ? InspectorColors.primary.withValues(alpha: 0.6)
-                : InspectorColors.border,
-            width: 0.5,
-          ),
-          right: BorderSide(
-            color: isAnchor
-                ? InspectorColors.primary.withValues(alpha: 0.6)
-                : InspectorColors.border,
-            width: 0.5,
-          ),
-          bottom: BorderSide(
-            color: isAnchor
-                ? InspectorColors.primary.withValues(alpha: 0.6)
-                : InspectorColors.border,
-            width: 0.5,
-          ),
+        // 圆角要求边框四边同色；左侧 kind 色条改为卡片内竖条实现。
+        // Uniform border color is required with borderRadius; the left kind
+        // accent is drawn as an inner bar below instead.
+        border: Border.all(
+          color: isAnchor
+              ? InspectorColors.primary.withValues(alpha: 0.6)
+              : InspectorColors.border,
+          width: isAnchor ? 1.0 : 0.5,
         ),
       ),
       child: Material(
@@ -352,103 +340,118 @@ class _TimelineViewerState extends State<TimelineViewer> {
           }),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      event.timeText,
-                      style: const TextStyle(
-                        color: InspectorColors.textHint,
-                        fontSize: 10,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        event.kind.label,
-                        style: TextStyle(
-                          color: color,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        event.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: InspectorColors.textPrimary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
+                Container(
+                  width: 3,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(1.5),
+                  ),
                 ),
-                if (event.subtitle != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    event.subtitle!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: InspectorColors.textSecondary,
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
-                if (expanded) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: InspectorColors.surface,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: InspectorColors.border,
-                        width: 0.5,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            event.timeText,
+                            style: const TextStyle(
+                              color: InspectorColors.textHint,
+                              fontSize: 10,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              event.kind.label,
+                              style: TextStyle(
+                                color: color,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              event.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: InspectorColors.textPrimary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    child: Text(
-                      event.detail,
-                      maxLines: 10,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: InspectorColors.textSecondary,
-                        fontSize: 10,
-                        height: 1.4,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
+                      if (event.subtitle != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          event.subtitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: InspectorColors.textSecondary,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                      if (expanded) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: InspectorColors.surface,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: InspectorColors.border,
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Text(
+                            event.detail,
+                            maxLines: 10,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: InspectorColors.textSecondary,
+                              fontSize: 10,
+                              height: 1.4,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: _buildActionChip(
+                            label: 'Focus ±${_window.inSeconds}s',
+                            color: InspectorColors.primary,
+                            onTap: () => setState(() {
+                              _anchor = event;
+                              _dirty = true;
+                            }),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  const SizedBox(height: 6),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: _buildActionChip(
-                      label: 'Focus ±${_window.inSeconds}s',
-                      color: InspectorColors.primary,
-                      onTap: () => setState(() {
-                        _anchor = event;
-                        _dirty = true;
-                      }),
-                    ),
-                  ),
-                ],
+                ),
               ],
             ),
           ),
