@@ -11,7 +11,8 @@ class _InspectorResponseProxy implements HttpClientResponse {
   final String? _requestUrl;
   final String? _requestMethod;
   final List<int> _bodyBytes = [];
-  bool _isCaptured = false;
+  bool _bodyCaptured = false;
+  bool _statusCaptured = false;
 
   /// 响应体最大捕获字节数 / Max response body capture size in bytes
   ///
@@ -30,29 +31,41 @@ class _InspectorResponseProxy implements HttpClientResponse {
   }) : _requestUrl = requestUrl,
        _requestMethod = requestMethod;
 
-  void _captureResponse([bool isError = false]) {
-    if (_isCaptured) return;
-    _isCaptured = true;
+  /// 解析后的状态码（命中响应规则时取规则值，否则取原始值）。
+  /// Resolved status code (rule value when a response rule matches, else original).
+  int get _statusCodeResolved {
+    final rule = _getRule();
+    return rule?.responseStatusCode ?? _response.statusCode;
+  }
+
+  /// 落状态码（幂等、规则感知）：statusCode getter 首次访问时即调用，不依赖 body
+  /// 流是否被消费，确保记录值与规则值一致。
+  /// Persist the status code (idempotent, rule-aware): called on first access to
+  /// the statusCode getter, independent of body consumption, so the recorded value
+  /// matches the rule-aware value.
+  void _captureStatusCode() {
+    if (_statusCaptured) return;
+    _statusCaptured = true;
     final id = _requestId;
     if (id == null) return;
-
-    // 1) 先无条件落状态码。此前 body 解码与状态码写在同一次调用里，
-    //    gzip / br / protobuf / 图片等非 UTF-8 响应会让 utf8.decode 抛异常，
-    //    整次 update 被跳过 —— 请求连状态码都没有，永远停在 pending。
-    //    Persist the status code first, unconditionally. Previously the body
-    //    decode and the status code shared one update call, so a non-UTF-8
-    //    response made utf8.decode throw and skip the whole update — the
-    //    request never even got its status code and stayed pending forever.
     try {
       InspectorService.instance.updateNetworkRequest(
         id,
-        statusCode: _response.statusCode,
+        statusCode: _statusCodeResolved,
       );
     } catch (_) {}
+  }
 
-    // 2) 再单独解码 body，失败降级为 hex 预览而不是丢弃整条更新。
-    //    Decode the body separately, degrading to a hex preview on failure
-    //    instead of dropping the update.
+  /// 落响应体（幂等）。若调用方只消费流、从不读 getter，这里兜底补一次状态码。
+  /// Persist the response body (idempotent). If the caller only consumes the stream
+  /// without reading the getter, capture the status code here too.
+  void _captureBody() {
+    if (_bodyCaptured) return;
+    _bodyCaptured = true;
+    final id = _requestId;
+    if (id == null) return;
+    // 兜底：确保状态码已落库。
+    _captureStatusCode();
     try {
       final String body;
       if (_captureExceeded) {
@@ -113,11 +126,8 @@ class _InspectorResponseProxy implements HttpClientResponse {
 
   @override
   int get statusCode {
-    final rule = _getRule();
-    if (rule?.responseStatusCode != null) {
-      return rule!.responseStatusCode!;
-    }
-    return _response.statusCode;
+    _captureStatusCode();
+    return _statusCodeResolved;
   }
 
   @override
@@ -258,11 +268,11 @@ class _InspectorResponseProxy implements HttpClientResponse {
           sink.add(chunk);
         },
         handleDone: (sink) {
-          _captureResponse();
+          _captureBody();
           sink.close();
         },
         handleError: (error, stackTrace, sink) {
-          _captureResponse(true);
+          _captureBody();
           sink.addError(error, stackTrace);
         },
       ),
