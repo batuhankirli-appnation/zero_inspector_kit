@@ -156,13 +156,15 @@ class InspectorDioInterceptor extends InspectorDioInterceptorBase {
         fallback = r;
       }
     }
-    return fallback ??
-        NetworkRequest(
-          id: requestId ?? _generateId(),
-          method: 'GET',
-          url: url,
-          requestTime: DateTime.now().millisecondsSinceEpoch,
-        );
+    if (fallback != null) return fallback;
+    final created = NetworkRequest(
+      id: requestId ?? _generateId(),
+      method: 'GET',
+      url: url,
+      requestTime: DateTime.now().millisecondsSinceEpoch,
+    );
+    InspectorService.instance.addNetworkRequest(created);
+    return created;
   }
 
   /// 生成唯一请求ID / Generate unique request ID

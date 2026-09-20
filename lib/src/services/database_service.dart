@@ -33,6 +33,7 @@ class DatabaseService {
     bool desc = false,
     String? whereKeyword,
   }) async {
+    QueryResult? firstFailure;
     for (final provider in DatabaseRegistry.instance.providers) {
       try {
         final result = await provider.queryTable(
@@ -45,8 +46,11 @@ class DatabaseService {
           whereKeyword: whereKeyword,
         );
         if (result.rows.isNotEmpty) return result;
+        if (firstFailure == null && result.hasError) {
+          firstFailure = result;
+        }
       } catch (_) {}
     }
-    return QueryResult(rows: [], columns: []);
+    return firstFailure ?? QueryResult(rows: [], columns: []);
   }
 }

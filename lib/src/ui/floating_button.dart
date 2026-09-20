@@ -80,6 +80,12 @@ class _FloatingInspectorButtonState extends State<FloatingInspectorButton>
   /// 当前吸附方向 / Current dock side
   _DockSide _dockSide = _DockSide.none;
 
+  /// 当前吸附动画的 listener 引用，便于重放前移除，避免陈旧 listener 残留
+  /// 在 controller 上持续触发 setState。
+  /// Listener reference of the current dock animation, removed before re-adding to
+  /// avoid stale listeners piling up on the controller and firing setState.
+  VoidCallback? _dockListener;
+
   /// 收入边缘时露出的像素 / Peek size (px) when tucked into edge
   final double _dockedPeekSize = 24.0;
 
@@ -118,6 +124,7 @@ class _FloatingInspectorButtonState extends State<FloatingInspectorButton>
   @override
   void dispose() {
     AlertService.instance.unreadCount.removeListener(_onUnreadChanged);
+    _dockListener = null;
     _dockController.dispose();
     super.dispose();
   }
@@ -230,6 +237,7 @@ class _FloatingInspectorButtonState extends State<FloatingInspectorButton>
     // 取消进行中的吸附动画 / Cancel running dock animation
     _dockController.stop();
     _dockAnim = null;
+    _dockListener = null;
     // 解除吸附状态，_x 保持当前实际位置 / Undock; keep _x at its actual current position
     setState(() => _dockSide = _DockSide.none);
     _startX = _x;
@@ -285,15 +293,19 @@ class _FloatingInspectorButtonState extends State<FloatingInspectorButton>
       });
       return;
     }
-    _dockAnim =
-        Tween<double>(begin: startX, end: targetX).animate(
-          CurvedAnimation(parent: _dockController, curve: Curves.easeOutCubic),
-        )..addListener(() {
-          setState(() {
-            _x = _dockAnim!.value;
-            _dockSide = side;
-          });
-        });
+    if (_dockAnim != null && _dockListener != null) {
+      _dockAnim!.removeListener(_dockListener!);
+    }
+    _dockAnim = Tween<double>(begin: startX, end: targetX).animate(
+      CurvedAnimation(parent: _dockController, curve: Curves.easeOutCubic),
+    );
+    _dockListener = () {
+      setState(() {
+        _x = _dockAnim!.value;
+        _dockSide = side;
+      });
+    };
+    _dockAnim!.addListener(_dockListener!);
     _dockController.forward(from: 0);
   }
 

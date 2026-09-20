@@ -16,7 +16,8 @@ class _InspectorHttpClient implements HttpClient {
     int port,
     String path,
   ) {
-    final scheme = port == 443 ? 'https' : 'http';
+    // 非标 https 端口（如 8443）也按 https 记录，仅影响展示 URL。
+    final scheme = (port == 443 || port == 8443) ? 'https' : 'http';
     return openUrl(
       method,
       Uri(scheme: scheme, host: host, port: port, path: path),
@@ -285,6 +286,11 @@ class _InspectorRequestProxy implements HttpClientRequest {
   final List<int> _bodyBytes = [];
   bool _isClosed = false;
 
+  /// [close] 与 [done] 共用同一响应代理，避免单订阅流被重复消费。
+  /// [close] and [done] share one response proxy so the single-subscription
+  /// stream is never listened to twice.
+  _InspectorResponseProxy? _responseProxy;
+
   /// 请求体最大捕获字节数 / Max request body capture size in bytes
   ///
   /// 超过此大小后停止缓冲 body 副本，仅继续透传到原生请求，
@@ -354,9 +360,16 @@ class _InspectorRequestProxy implements HttpClientRequest {
   @override
   Future<HttpClientResponse> close() async {
     if (_isClosed) {
-      return _request.done.then(
-        (response) => _InspectorResponseProxy(response, _requestId),
-      );
+      if (_responseProxy != null) return Future.value(_responseProxy!);
+      return _request.done.then((response) {
+        _responseProxy ??= _InspectorResponseProxy(
+          response,
+          _requestId,
+          requestUrl: _request.uri.toString(),
+          requestMethod: _request.method,
+        );
+        return _responseProxy!;
+      });
     }
     _isClosed = true;
 
@@ -376,19 +389,23 @@ class _InspectorRequestProxy implements HttpClientRequest {
           }
         }
 
-        if (rule.requestBody != null) {
+        var bodyRuleApplied = false;
+        if (rule.requestBody != null &&
+            !_streamTeeForwarded &&
+            !_wireForwarded) {
           final modifiedBody = rule.requestBody;
           finalBody = modifiedBody is String
               ? modifiedBody
               : jsonEncode(modifiedBody);
           finalBodyBytes = utf8.encode(finalBody);
           _request.contentLength = finalBodyBytes.length;
+          bodyRuleApplied = true;
         }
 
         // 命中规则且实际修改了请求头或请求体 → 标记该请求已被拦截修改。
         // Matched a rule and actually modified request headers/body → mark as
         // modified by interceptor for the "filter by interception status" feature.
-        if ((rule.requestHeaders != null || rule.requestBody != null) &&
+        if ((rule.requestHeaders != null || bodyRuleApplied) &&
             _requestId != null) {
           InspectorService.instance.updateNetworkRequest(
             _requestId,
@@ -450,12 +467,16 @@ class _InspectorRequestProxy implements HttpClientRequest {
     return _request
         .close()
         .then((response) {
-          return _InspectorResponseProxy(
-            response,
-            _requestId,
-            requestUrl: _request.uri.toString(),
-            requestMethod: _request.method,
-          );
+          final proxy =
+              _responseProxy ??
+              _InspectorResponseProxy(
+                response,
+                _requestId,
+                requestUrl: _request.uri.toString(),
+                requestMethod: _request.method,
+              );
+          _responseProxy = proxy;
+          return proxy;
         })
         .catchError((error, stackTrace) {
           try {
@@ -495,6 +516,10 @@ class _InspectorRequestProxy implements HttpClientRequest {
     final controller = StreamController<List<int>>();
     final forwardFut = _request.addStream(controller.stream);
     try {
+      if (_bodyBytes.isNotEmpty && !_wireForwarded) {
+        controller.add(List<int>.from(_bodyBytes));
+        _wireForwarded = true;
+      }
       await for (final chunk in stream) {
         if (_bodyBytes.length < _maxRequestCaptureBytes &&
             InspectorService.instance.globalBodyRemaining > 0) {
@@ -603,7 +628,16 @@ class _InspectorRequestProxy implements HttpClientRequest {
   List<Cookie> get cookies => _request.cookies;
 
   @override
-  Future<HttpClientResponse> get done => _request.done.then(
-    (response) => _InspectorResponseProxy(response, _requestId),
-  );
+  Future<HttpClientResponse> get done {
+    if (_responseProxy != null) return Future.value(_responseProxy!);
+    return _request.done.then((response) {
+      _responseProxy ??= _InspectorResponseProxy(
+        response,
+        _requestId,
+        requestUrl: _request.uri.toString(),
+        requestMethod: _request.method,
+      );
+      return _responseProxy!;
+    });
+  }
 }

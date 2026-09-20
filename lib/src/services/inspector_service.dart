@@ -41,21 +41,24 @@ class ThrottledNotifier extends ChangeNotifier {
     // power; data is still readable via getters once the panel is mounted.
     if (!hasListeners) return;
     _frameScheduled = true;
+    var fired = false;
+    void doNotify() {
+      if (fired) return;
+      fired = true;
+      _frameScheduled = false;
+      notifyListeners();
+    }
+
     try {
       final binding = SchedulerBinding.instance;
       binding.scheduleFrame();
-      binding.addPostFrameCallback((_) {
-        _frameScheduled = false;
-        notifyListeners();
-      });
+      binding.addPostFrameCallback((_) => doNotify());
     } catch (_) {
       // 无绑定可用：退回 Timer 兜底。
       // No binding available: fall back to a Timer.
-      Timer(const Duration(milliseconds: 16), () {
-        _frameScheduled = false;
-        notifyListeners();
-      });
+      Timer(const Duration(milliseconds: 16), doNotify);
     }
+    Timer(const Duration(milliseconds: 500), doNotify);
   }
 
   /// 重置帧排程标志（dispose 时调用）/ Reset the frame-scheduling flag (on dispose)
