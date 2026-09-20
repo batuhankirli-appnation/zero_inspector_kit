@@ -467,7 +467,8 @@ class _InspectorRequestProxy implements HttpClientRequest {
     return _request
         .close()
         .then((response) {
-          final proxy = _responseProxy ??
+          final proxy =
+              _responseProxy ??
               _InspectorResponseProxy(
                 response,
                 _requestId,
