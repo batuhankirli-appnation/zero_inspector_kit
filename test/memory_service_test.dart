@@ -214,15 +214,27 @@ void main() {
         // 等待进入 verifying / Wait for verifying
         await waitFor(() => svc.leakRecords[0].status == LeakStatus.verifying);
 
-        // 等待验证超时后进入 leaked（_leakVerifyWaitMs=3000ms + 定时器间隔 2000ms）
-        // Wait for verify timeout then enter leaked
-        await waitFor(
-          () => svc.leakRecords[0].status == LeakStatus.leaked,
-          timeout: const Duration(seconds: 8),
-        );
-        expect(svc.leakRecords[0].status, equals(LeakStatus.leaked));
-        expect(svc.leakRecords[0].leakedAt, isNotNull);
-        expect(svc.leakedCount, equals(1));
+        if (svc.vmServiceAvailable) {
+          // 有 VM Service：可强制 GC 确认弱引用仍存活，验证超时后进入 leaked
+          // With VM Service: can force GC to confirm the weak ref is still alive,
+          // so after the verify wait it transitions to leaked.
+          await waitFor(
+            () => svc.leakRecords[0].status == LeakStatus.leaked,
+            timeout: const Duration(seconds: 8),
+          );
+          expect(svc.leakRecords[0].status, equals(LeakStatus.leaked));
+          expect(svc.leakRecords[0].leakedAt, isNotNull);
+          expect(svc.leakedCount, equals(1));
+        } else {
+          // 无 VM Service：无法强制 GC，按设计不自动判泄漏（避免把已释放
+          // 但尚未回收的对象误报为泄漏），验证阶段保持 verifying。
+          // Without VM Service: GC cannot be forced, so by design we do NOT
+          // auto-flag a leak (avoids false positives for released-but-not-yet
+          // collected objects); the record stays in verifying.
+          await Future.delayed(const Duration(seconds: 4));
+          expect(svc.leakRecords[0].status, equals(LeakStatus.verifying));
+          expect(svc.leakedCount, equals(0));
+        }
       },
     );
   });
