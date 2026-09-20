@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.12.1
+
+### Fixed / 修复
+- 网络抓取多项正确性修复：非 443 的 https 端口（如 8443）现在按 https 记录 URL，避免导出 / 复制 cURL 时把 https 错记成 http；命中请求体规则且进入直传模式时不再改写 `Content-Length`，避免服务端按错误长度读取请求体；响应体未被消费（只读了 `statusCode`/headers）时状态码现在也会落库，不再永远停在 pending；`done` getter 与 `close()` 复用同一响应代理，避免单订阅流被重复消费；`add()` 与 `addStream()` 混用不再丢失初始 chunk。 / Network capture correctness fixes: https URLs on non-443 ports (e.g. 8443) are now recorded as https so the exported cURL is correct; when a request-body rule hits in pass-through mode we no longer rewrite `Content-Length` (which made the server read the wrong body length); a status code is now persisted even when the response body is never consumed (only `statusCode`/headers read), so the request is no longer stuck pending forever; `done` and `close()` share one response proxy to avoid double-listening to the single-subscription stream; mixing `add()` and `addStream()` no longer drops the initial chunk.
+- WebSocket / gRPC 记录现在会落盘：连接关闭 / 调用完成时补合成状态码（101 / 200），不再永远 pending、也不再从会话存档导出中丢失；WS 抓取关闭时握手 GET 作为普通请求出现在网络列表，不再彻底不可见。 / WebSocket / gRPC records are now persisted: a synthetic status code (101 / 200) is added on close / call completion so they are no longer stuck pending or missing from exported session archives; when WS capture is disabled the handshake GET shows up as a normal request instead of vanishing.
+- 日志拦截补全两行式集成（`init()` + `wrapApp()`）下漏捕的异步异常：新增全局 Isolate 级错误监听，未捕获的 `Future` / `Stream` 异常也会写入检查器日志与 Errors Tab（原 `runZonedGuarded(() {}, …)` 为空死代码，从未捕获任何异常）。 / Log interception now captures async errors missed under the two-liner integration (`init()` + `wrapApp()`): a global isolate-level error listener writes uncaught `Future` / `Stream` errors to the inspector log and Errors tab (the previous `runZonedGuarded(() {}, …)` was dead code that never caught anything).
+- `NetworkRequest.toJson` 对 Map / List 类型的请求 / 响应体改用 `jsonEncode`，不再被 `toString()` 成 Dart 字面量导致导出后无法解析还原。 / `NetworkRequest.toJson` now uses `jsonEncode` for Map / List bodies instead of `toString()`, which produced Dart literals that could not be parsed back after export.
+- 无 VM Service（release / 真机 profile）时不再自动判内存泄漏，避免已释放但尚未回收的对象被误报。 / Memory leaks are no longer auto-flagged without VM Service (release / real-device profile), avoiding false positives for objects already released but not yet collected.
+- 悬浮按钮每次吸附动画移除上一次 listener，避免陈旧 listener 残留持续触发 `setState`；`ThrottledNotifier` 在 App 退后台不产帧时用 Timer 兜底通知，避免丢失；Dio 找不到匹配请求时回退记录先入列表再更新，避免 `onResponse` / `onError` 数据丢失；`DatabaseService.queryTable` 保留首个带错误的 provider 结果，避免失败消息被后续空结果吞掉。 / Floating button now removes the previous dock-animation listener to avoid stale listeners firing `setState`; `ThrottledNotifier` fires via a Timer when the app is backgrounded and produces no frames, avoiding dropped notifications; when Dio finds no matching request the fallback record is added to the list before update so `onResponse` / `onError` data is not lost; `DatabaseService.queryTable` keeps the first error-carrying provider result so a failure message is not swallowed by a later empty result.
+
 ## 1.12.0
 
 ### Added / 新增

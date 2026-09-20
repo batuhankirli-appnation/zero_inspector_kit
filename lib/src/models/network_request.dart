@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// 状态码分组（用于「按状态码区间筛选」维度）。
 /// Status-code groups (for the "filter by status-code range" dimension).
 enum StatusGroup {
@@ -103,14 +105,33 @@ class NetworkRequest {
       'method': method,
       'url': url,
       'headers': headers,
-      'body': body?.toString(),
-      'responseBody': responseBody?.toString(),
+      'body': _jsonSafe(body),
+      'responseBody': _jsonSafe(responseBody),
       'statusCode': statusCode,
       'requestTime': requestTime,
       'responseTime': responseTime,
       'duration': duration,
       'isModifiedByInterceptor': isModifiedByInterceptor,
     };
+  }
+
+  /// 将 [value] 安全序列化为 JSON 友好的字符串：Map / List 用 [jsonEncode]，
+  /// 其它类型用 [toString]。避免经 Dio 传入的 Map 被 [toString] 成 Dart 字面量、
+  /// 导出后无法解析还原。
+  /// Serialize [value] into a JSON-friendly string: Map / List via [jsonEncode],
+  /// others via [toString]. Avoids Dio-supplied Maps being turned into Dart
+  /// literals by [toString] and becoming unparseable after export.
+  static dynamic _jsonSafe(dynamic value) {
+    if (value == null) return null;
+    if (value is Map || value is List) {
+      try {
+        return jsonEncode(value);
+      } catch (_) {
+        // 极少数不可 JSON 化的对象回退到 toString。
+        // Fall back to toString() for the rare non-JSON-encodable value.
+      }
+    }
+    return value.toString();
   }
 
   /// 复制并可选更新字段。当 [maxBodyBytes] 大于 0 时，对 body/responseBody 做头部预览截断。

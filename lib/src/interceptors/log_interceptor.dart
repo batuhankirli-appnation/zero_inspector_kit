@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 
@@ -52,6 +53,7 @@ class InspectorLogInterceptor {
     _isStarted = false;
     _restoreDebugPrint();
     _restoreFlutterOnError();
+    _stopIsolateErrorListener();
   }
 
   /// 覆盖 debugPrint 函数，实现日志捕获 / Override debugPrint function to capture logs
@@ -92,10 +94,42 @@ class InspectorLogInterceptor {
     };
 
     // 捕获未处理的异常 / Capture unhandled exceptions
-    runZonedGuarded(() {}, (error, stackTrace) {
-      captureLog(error.toString(), LogLevel.error);
-      captureLog(stackTrace.toString(), LogLevel.error);
+    // 全局异步异常兜底（覆盖两行式集成、以及非本插件 Zone 启动的场景）。
+    _startIsolateErrorListener();
+  }
+
+  /// 全局异步异常监听端口（Isolate 级）。
+  /// Global async-error listener port (isolate-level).
+  ReceivePort? _isolateErrorPort;
+
+  /// 全局接管未捕获的异步异常（Future / Stream error）。Isolate 级监听不干扰
+  /// Flutter 自身的错误呈现，仅额外写入检查器日志。
+  /// Globally capture uncaught async errors (Future / Stream). The isolate-level
+  /// listener does not interfere with Flutter's own error presentation; it only
+  /// additionally writes the error to the inspector log.
+  void _startIsolateErrorListener() {
+    if (_isolateErrorPort != null) return;
+    final port = ReceivePort();
+    _isolateErrorPort = port;
+    port.listen((dynamic errorAndStack) {
+      if (errorAndStack is List && errorAndStack.length >= 2) {
+        captureLog(errorAndStack[0].toString(), LogLevel.error);
+        captureLog(errorAndStack[1].toString(), LogLevel.error);
+      } else {
+        captureLog(errorAndStack.toString(), LogLevel.error);
+      }
     });
+    Isolate.current.addErrorListener(port.sendPort);
+  }
+
+  /// 停止并清理全局异步异常监听。
+  /// Stop and clean up the global async-error listener.
+  void _stopIsolateErrorListener() {
+    final port = _isolateErrorPort;
+    if (port == null) return;
+    Isolate.current.removeErrorListener(port.sendPort);
+    port.close();
+    _isolateErrorPort = null;
   }
 
   /// 恢复原始的 FlutterError.onError / Restore original FlutterError.onError

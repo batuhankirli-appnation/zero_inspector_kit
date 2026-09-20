@@ -1568,8 +1568,10 @@ class MemoryInspectorService extends ChangeNotifier {
               changed = true;
               break;
             }
-            record.status = LeakStatus.leaked;
-            changed = true;
+            if (_vmServiceAvailable) {
+              record.status = LeakStatus.leaked;
+              changed = true;
+            }
           }
           break;
 
